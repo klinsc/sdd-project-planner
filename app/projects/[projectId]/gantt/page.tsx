@@ -91,7 +91,14 @@ export default async function ProjectGanttPage({ params }: ProjectParams) {
             allowed={[Role.ADMIN, Role.MANAGER, Role.MEMBER]}
             role={userRole}
           >
-            <TaskEditorModal projectId={project.id} members={ownerOptions} />
+            <TaskEditorModal
+              projectId={project.id}
+              members={ownerOptions}
+              parentTasks={project.tasks.map((task) => ({
+                id: task.id,
+                title: task.title,
+              }))}
+            />
           </PermissionsGuard>
           <PermissionsGuard
             allowed={[Role.ADMIN, Role.MANAGER]}

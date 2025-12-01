@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "./ui/label";
 
 const taskSchema = z.object({
   title: z.string().min(3),
@@ -33,6 +34,7 @@ const taskSchema = z.object({
 type TaskEditorModalProps = {
   projectId: string;
   members: { id: string; name?: string | null }[];
+  parentTasks?: { id: string; title: string }[];
   task?: {
     id: string;
     title: string;
@@ -51,6 +53,7 @@ type TaskEditorModalProps = {
 export default function TaskEditorModal({
   projectId,
   members,
+  parentTasks = [],
   task,
   triggerLabel = "New Task",
 }: TaskEditorModalProps) {
@@ -78,12 +81,20 @@ export default function TaskEditorModal({
   );
 
   const [formState, setFormState] = useState(initialState);
+  const parentOptions = useMemo(
+    () => parentTasks.filter((parentTask) => parentTask.id !== task?.id),
+    [parentTasks, task?.id]
+  );
 
   const handleSubmit = () => {
     setError(null);
     startTransition(async () => {
       try {
-        const payload = taskSchema.parse(formState);
+        const parsed = taskSchema.parse(formState);
+        const payload = {
+          ...parsed,
+          parentTaskId: parsed.parentTaskId ? parsed.parentTaskId : null,
+        };
         const endpoint = task ? `/api/tasks/${task.id}` : "/api/tasks";
         const method = task ? "PATCH" : "POST";
         const body = task ? payload : { ...payload, projectId };
@@ -113,7 +124,7 @@ export default function TaskEditorModal({
       <DialogTrigger asChild>
         <Button>{task ? "Edit Task" : triggerLabel}</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg bg-white">
         <DialogHeader>
           <DialogTitle>{task ? "Edit Task" : "Create Task"}</DialogTitle>
           <DialogDescription>
@@ -122,6 +133,34 @@ export default function TaskEditorModal({
         </DialogHeader>
 
         <div className="space-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="parentTask">Parent Task</Label>
+            <select
+              id="parentTask"
+              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+              value={formState.parentTaskId ?? ""}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  parentTaskId: event.target.value || "",
+                }))
+              }
+              disabled={isPending || parentOptions.length === 0}
+            >
+              <option value="">None</option>
+              {parentOptions.map((parentTask) => (
+                <option key={parentTask.id} value={parentTask.id}>
+                  {parentTask.title}
+                </option>
+              ))}
+            </select>
+            {parentOptions.length === 0 && (
+              <p className="text-xs text-slate-500">
+                Add a few tasks first to enable nesting.
+              </p>
+            )}
+          </div>
+
           <Input
             placeholder="Title"
             value={formState.title}
@@ -166,6 +205,7 @@ export default function TaskEditorModal({
             />
           </div>
           <div className="grid gap-3 md:grid-cols-2">
+            <Label>Delay Days</Label>
             <Input
               type="number"
               min={0}
@@ -178,6 +218,7 @@ export default function TaskEditorModal({
               }
               disabled={isPending}
             />
+            <Label>Progress %</Label>
             <Input
               type="number"
               min={0}
