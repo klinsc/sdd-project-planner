@@ -1,139 +1,23 @@
 generator client {
-  provider = "prisma-client-js"  
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-    url      = env("DATABASE_URL")
-}
-
-enum Role {
-  ADMIN
-  MANAGER
-  MEMBER
-  VIEWER
-}
-
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
-model User {
-  id              String          @id @default(cuid())
-  email           String          @unique
-  name            String?
-  image           String?
-  globalRole      Role            @default(VIEWER)
-  members         ProjectMember[]
-  ownedTasks      Task[]          @relation("TaskOwner")
-  createdProjects Project[]       @relation("ProjectCreatedBy")
-  auditLogs       AuditLog[]      @relation("AuditActor")
-  issues          Issue[]         @relation("IssueCreator")
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-}
-
-model Project {
-  id            String           @id @default(cuid())
-  name          String
-  description   String?
-  startDate     DateTime
-  endDateTarget DateTime?
-  createdById   String?
-  createdBy     User?            @relation("ProjectCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  members       ProjectMember[]
-  tasks         Task[]
-  milestones    Milestone[]
-  auditLogs     AuditLog[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-
-  @@index([startDate])
-}
-
-model ProjectMember {
-  id        String   @id @default(cuid())
-  projectId String
-  userId    String
-  role      Role
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-
-  @@unique([projectId, userId])
-  @@index([userId, role])
+  url      = env("DATABASE_URL")
 }
 
 model Task {
-  id              String      @id @default(cuid())
-  projectId       String
+  id              String   @id @default(cuid())
   title           String
   description     String?
   startDate       DateTime
   endDateOriginal DateTime
-  delayDays       Int         @default(0)
+  delayDays       Int      @default(0)
   endDateFinal    DateTime
-  ownerId         String?
-  progress        Int         @default(0)
-  priority        Priority    @default(MEDIUM)
   parentTaskId    String?
-  project         Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  owner           User?       @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  parent          Task?       @relation("TaskChildren", fields: [parentTaskId], references: [id])
-  children        Task[]      @relation("TaskChildren")
-  issues          Issue[]
-  milestones      Milestone[] @relation("TaskMilestones")
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-
-  @@index([projectId, startDate])
-  @@index([ownerId])
-}
-
-model Milestone {
-  id            String   @id @default(cuid())
-  projectId     String
-  name          String
-  date          DateTime
-  relatedTaskId String?
-  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  relatedTask   Task?    @relation("TaskMilestones", fields: [relatedTaskId], references: [id], onDelete: SetNull)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([projectId, date])
-}
-
-model Issue {
-  id           String   @id @default(cuid())
-  taskId       String
-  title        String
-  startDate    DateTime
-  durationDays Int
-  description  String?
-  createdById  String?
-  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  createdBy    User?    @relation("IssueCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([taskId, startDate])
-}
-
-model AuditLog {
-  id         String   @id @default(cuid())
-  projectId  String
-  actorId    String?
-  entityType String
-  entityId   String
-  action     String
-  payload    Json?
-  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
-  createdAt  DateTime @default(now())
-
-  @@index([projectId, createdAt])
+  parent          Task?    @relation("TaskChildren", fields: [parentTaskId], references: [id])
+  children        Task[]   @relation("TaskChildren")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
