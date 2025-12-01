@@ -59,8 +59,24 @@ export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
     const body = createTaskSchema.parse(await request.json());
+    const normalizedParentTaskId = body.parentTaskId?.trim();
+    const parentTaskId = normalizedParentTaskId ? normalizedParentTaskId : null;
 
     await ensureProjectRole(user, body.projectId, Permission.taskWriteRoles);
+
+    if (parentTaskId) {
+      const parentTask = await prisma.task.findUnique({
+        where: { id: parentTaskId },
+        select: { projectId: true },
+      });
+
+      if (!parentTask || parentTask.projectId !== body.projectId) {
+        return NextResponse.json(
+          { error: "Parent task must exist within the same project" },
+          { status: 400 }
+        );
+      }
+    }
 
     if (body.endDateOriginal < body.startDate) {
       return NextResponse.json(
@@ -87,7 +103,7 @@ export async function POST(request: Request) {
           ownerId: body.ownerId ?? null,
           progress: body.progress,
           priority: body.priority,
-          parentTaskId: body.parentTaskId ?? null,
+          parentTaskId,
         },
         include: { owner: true },
       });

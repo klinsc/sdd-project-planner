@@ -21,11 +21,13 @@ vi.mock("@/lib/permissions", async () => {
 
 const {
   prismaTaskFindMany,
+  mockTaskFindUnique,
   mockTaskCreate,
   mockAuditCreate,
   prismaTransaction,
 } = vi.hoisted(() => {
   const prismaTaskFindMany = vi.fn();
+  const mockTaskFindUnique = vi.fn();
   const mockTaskCreate = vi.fn();
   const mockAuditCreate = vi.fn();
   const prismaTransaction = vi.fn((callback: any) =>
@@ -37,6 +39,7 @@ const {
 
   return {
     prismaTaskFindMany,
+    mockTaskFindUnique,
     mockTaskCreate,
     mockAuditCreate,
     prismaTransaction,
@@ -47,6 +50,7 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     task: {
       findMany: prismaTaskFindMany,
+      findUnique: mockTaskFindUnique,
     },
     $transaction: prismaTransaction,
   },
@@ -73,6 +77,7 @@ describe("/api/tasks routes", () => {
       role: Role.ADMIN,
     });
     prismaTaskFindMany.mockResolvedValue([]);
+    mockTaskFindUnique.mockReset();
     mockTaskCreate.mockResolvedValue({
       id: "task-1",
       title: "Example",
@@ -134,5 +139,33 @@ describe("/api/tasks routes", () => {
         }),
       })
     );
+  });
+
+  it("returns 400 when parent task does not exist in project", async () => {
+    mockTaskFindUnique.mockResolvedValue(null);
+    const payload = {
+      projectId: "ckproj000000000000000001",
+      title: "Child task",
+      startDate: "2025-01-01T00:00:00Z",
+      endDateOriginal: "2025-01-05T00:00:00Z",
+      delayDays: 0,
+      progress: 0,
+      priority: "MEDIUM",
+      parentTaskId: "ckparent000000000000000001",
+    };
+
+    const response = await POST(
+      new Request("http://localhost/api/tasks", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(mockTaskCreate).not.toHaveBeenCalled();
+    expect(await response.json()).toEqual({
+      error: "Parent task must exist within the same project",
+    });
   });
 });
