@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "ignoreDeprecations": "6.0",
     "lib": ["DOM", "DOM.Iterable", "ES2021"],
     "allowJs": true,
     "skipLibCheck": true,
