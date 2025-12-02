@@ -31,7 +31,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
   try {
     const user = await getCurrentUser();
 
-    const task = await prisma.task.findUnique({
+    const task = await prisma.task.find({
       where: { id: params.id },
       include: { owner: true },
     });

@@ -20,7 +20,6 @@ export async function recalcTaskEndDate(
 ) {
   const task = await client.task.findUnique({
     where: { id: taskId },
-    include: { issues: true },
   });
 
   if (!task) {
@@ -29,8 +28,7 @@ export async function recalcTaskEndDate(
 
   const endDateFinal = computeEndDateFinal(
     task.endDateOriginal,
-    task.delayDays,
-    task.issues.map((issue) => issue.durationDays)
+    task.delayDays
   );
 
   return client.task.update({

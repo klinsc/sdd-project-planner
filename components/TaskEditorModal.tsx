@@ -3,7 +3,6 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
-import { Priority } from "@prisma/client";
 import {
   Dialog,
   DialogClose,
@@ -26,7 +25,6 @@ const taskSchema = z.object({
   endDateOriginal: z.string(),
   delayDays: z.coerce.number().min(0),
   ownerId: z.string().optional().nullable(),
-  priority: z.nativeEnum(Priority),
   progress: z.coerce.number().min(0).max(100),
   parentTaskId: z.string().optional().nullable(),
 });
@@ -43,7 +41,6 @@ type TaskEditorModalProps = {
     endDateOriginal: string;
     delayDays: number;
     ownerId?: string | null;
-    priority: Priority;
     progress: number;
     parentTaskId?: string | null;
   };
@@ -73,7 +70,6 @@ export default function TaskEditorModal({
         new Date().toISOString().slice(0, 10),
       delayDays: task?.delayDays ?? 0,
       ownerId: task?.ownerId ?? "",
-      priority: task?.priority ?? Priority.MEDIUM,
       progress: task?.progress ?? 0,
       parentTaskId: task?.parentTaskId ?? "",
     }),
@@ -249,23 +245,6 @@ export default function TaskEditorModal({
               {members.map((member) => (
                 <option key={member.id} value={member.id}>
                   {member.name}
-                </option>
-              ))}
-            </select>
-            <select
-              className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
-              value={formState.priority}
-              onChange={(event) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  priority: event.target.value as Priority,
-                }))
-              }
-              disabled={isPending}
-            >
-              {Object.values(Priority).map((priority) => (
-                <option key={priority} value={priority}>
-                  {priority}
                 </option>
               ))}
             </select>
