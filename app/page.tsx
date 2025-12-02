@@ -9,23 +9,23 @@ const MOCK_TASKS: FrappeTask[] = [
   {
     id: "1",
     name: "Task 1",
-    start: "2024-07-01",
-    end: "2024-07-05",
+    start: "2025-12-01",
+    end: "2025-12-30",
     progress: 20,
   },
   {
     id: "2",
     name: "Task 2",
-    start: "2024-07-03",
-    end: "2024-07-10",
+    start: "2025-12-15",
+    end: "2026-01-15",
     progress: 50,
     dependencies: "1",
   },
   {
     id: "3",
     name: "Task 3",
-    start: "2024-07-08",
-    end: "2024-07-15",
+    start: "2026-01-10",
+    end: "2026-02-10",
     progress: 80,
     dependencies: "2",
   },
@@ -38,7 +38,9 @@ export default async function FrappeGanttPage() {
         <p className="text-sm uppercase tracking-wide text-slate-500">
           Gantt (Frappe)
         </p>
-        <h1 className="text-3xl font-semibold">{"example project"}</h1>
+        <h1 className="text-3xl font-semibold">
+          {"แผนดำเนินการสำรวจ-ออกแบบ งานก่อสร้างสถานีไฟฟ้า ปี 2568 ของ กอฟ."}
+        </h1>
         <p className="text-slate-600">
           Snapshot generated {format(new Date(), "MMM d, yyyy")} from current
           task data.

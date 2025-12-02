@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { GanttTask, GanttViewMode } from "frappe-gantt";
 import "node_modules/frappe-gantt/dist/frappe-gantt.css";
 
+const VIEW_OPTIONS: GanttViewMode[] = ["Day", "Week", "Month", "Year"];
+
 export type FrappeTask = {
   id: string;
   name: string;
@@ -35,6 +37,10 @@ export default function FrappeGanttChart({
 }: FrappeGanttChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState(viewMode);
+  const orderedViewModes = useMemo(() => {
+    // Keep the active view first so frappe-gantt does not reset to another mode.
+    return [view, ...VIEW_OPTIONS.filter((mode) => mode !== view)];
+  }, [view]);
 
   const sanitizedTasks = useMemo<NormalizedTask[]>(
     () =>
@@ -53,7 +59,7 @@ export default function FrappeGanttChart({
       if (!containerRef.current) return;
       containerRef.current.innerHTML = "";
       gantt = new Gantt(containerRef.current, sanitizedTasks as GanttTask[], {
-        view_modes: ["Day", "Week", "Month", "Year"],
+        view_modes: orderedViewModes,
         view_mode: view,
         custom_popup_html: (task: GanttTask) => {
           const normalized = task as NormalizedTask;
@@ -91,13 +97,35 @@ export default function FrappeGanttChart({
         containerRef.current.innerHTML = "";
       }
     };
-  }, [sanitizedTasks, view]);
+  }, [orderedViewModes, sanitizedTasks, view]);
+
+  // effect: save view mode to local storage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("sdd-frappeGanttViewMode", view);
+    }
+  }, [view]);
+
+  // effect: load view mode from local storage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedView = window.localStorage.getItem("sdd-frappeGanttViewMode");
+      if (
+        savedView === "Day" ||
+        savedView === "Week" ||
+        savedView === "Month" ||
+        savedView === "Year"
+      ) {
+        setView(savedView);
+      }
+    }
+  }, []);
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-slate-500">View:</span>
-        {["Day", "Week", "Month", "Year"].map((mode) => (
+        {VIEW_OPTIONS.map((mode) => (
           <button
             key={mode}
             type="button"
